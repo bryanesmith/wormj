@@ -12,16 +12,16 @@ This game is not working yet. I will remove this notice when it is. =)
 
 2. Run:
 
-      lein deps
+        lein deps
    
 3. You can run the application using Leiningen:
 
-      lein run
+        lein run
 
   Or you can build an Uberjar and run that:
 
-      lein uberjar
-      java -jar wormj-<version>-standalone.jar
+        lein uberjar
+        java -jar wormj-<version>-standalone.jar
 
 ## Usage
 
