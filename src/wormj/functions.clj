@@ -8,6 +8,21 @@
    :size  size})
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn build-apple
+  "Build an apple"
+  [val x y]
+  {:val val :position {:x x :y y}})
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn build-worm
+  "Builds a worm"
+  [init-len, grow-count, pos]
+  { :initial-len init-len
+    :grow-count  grow-count
+    :position    pos        })
+
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-board
   "Generates an initial board"
   [width height]
@@ -21,14 +36,6 @@
     (throw (Exception. "Length must be 1 or greater."))
     (vec (for [x# (range x (+ x len))]
       {:x x# :y y}))))
-
-; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
-(defn build-worm
-  "Builds a worm"
-  [init-len, grow-count, pos]
-  { :initial-len init-len
-    :grow-count  grow-count
-    :position    pos        })
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-worm
@@ -84,19 +91,36 @@
   (> (:grow-count worm) 0))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn apple?
+  "Returns true if an apple has been set on the board."
+  [board]
+  (not (nil? (:apple board))))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn apple-consumed?
+  "Returns true if apple consumed."
+  [board worm]
+  (if (apple? board)
+    (= (:position (:apple board)) (peek (:position worm))) ; Eaten iff position(head) = position(apple)
+    false))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn move-worm
   "Given specified direction, returns new worm"
   [worm direction]
   (let [pos       (:position worm)
         prev-head (peek pos)
         next-head (update-head prev-head direction)]
-
     (build-worm (:initial-len worm) 
-                ; Decrement counter
-                (max 0 (dec (:grow-count worm)))
+                (max 0 (dec (:grow-count worm)))          ; Decrement counter
                 (if (growing? worm)
-                  ; Still growing, don't drop tail
-                  (conj pos next-head)
-                  ; Not growing, drop tail
-                  (conj (vec (rest pos)) next-head)))))
+                  (conj pos next-head)                    ; Still growing, don't drop tail
+                  (conj (vec (rest pos)) next-head)))))   ; Not growing, drop tail
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn score
+  "Calculates current score"
+  [worm]
+  (- (+ (count (:position worm)) (:grow-count worm))     ; score = length + grow-count - initial-len
+     (:initial-len worm)))
 

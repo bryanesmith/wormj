@@ -106,3 +106,26 @@
   ; Worm goes left, no growth, growth counter remains at 0
   (is (= (move-worm worm-4 :left) worm-5))))
 
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(deftest test-apple?
+  (is (true?  (apple? (build-board (build-apple 5 1 2) {:x 3 :y 4}))))
+  (is (false? (apple? (build-board nil                 {:x 3 :y 4}))))) 
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(deftest test-apple-consumed?
+  (let [worm (build-worm 1 0 [{:x 3 :y 1} {:x 3 :y 2} {:x 2 :y 2}])
+        board-1 (build-board nil {:x 10 :y 10})
+        board-2 (build-board (build-apple 3 3 3) {:x 10 :y 10})
+        board-3 (build-board (build-apple 3 2 2) {:x 10 :y 10})]
+    (is (false? (apple-consumed? board-1 worm)))
+    (is (false? (apple-consumed? board-2 worm)))
+    (is (true?  (apple-consumed? board-3 worm)))))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(deftest test-score
+  (is (= 0 (score (build-worm 3 0 [{:x 0 :y 0} {:x 1 :y 0} {:x 2 :y 0}]))))
+  (is (= 3 (score (build-worm 3 3 [{:x 0 :y 0} {:x 1 :y 0} {:x 2 :y 0}]))))                 ; growth counter of 3
+  (is (= 1 (score (build-worm 3 0 [{:x 0 :y 0} {:x 1 :y 0} {:x 2 :y 0} {:x 3 :y 0}]))))     ; grew 1
+  (is (= 4 (score (build-worm 3 3 [{:x 0 :y 0} {:x 1 :y 0} {:x 2 :y 0} {:x 3 :y 0}])))))    ; growth counter of 3 and grew 1
+
+
