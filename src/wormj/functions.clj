@@ -1,10 +1,17 @@
 (ns wormj.functions)
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn build-board
+  "Build a board"
+  [apple size]
+  {:apple apple
+   :size  size})
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-board
-  "Generates a board"
+  "Generates an initial board"
   [width height]
-  {:x width :y height})
+  (build-board nil {:x width :y height}))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-worm-position
@@ -25,7 +32,7 @@
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-worm
-  "Generate a worm of specific length, starting at specified coordinates"
+  "Generate an initial worm of specific length, starting at specified coordinates"
   [x, y, len]
   (build-worm len 0 (gen-worm-position x y len)))
 
@@ -35,8 +42,8 @@
   [worm board]
   (let [w_x (:x (last (:position worm)))
         w_y (:y (last (:position worm)))
-        b_x (:x board)
-        b_y (:y board)]
+        b_x (:x (:size board))
+        b_y (:y (:size board))]
     (or (= w_x -1)
         (= w_y -1)
         (= w_x b_x)
@@ -57,4 +64,39 @@
   [worm board]
   (or (collide-wall? worm board)
       (collide-self? worm)))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn update-head
+  "Given previous head and direction, returns new head. Doesn't check whether valid." 
+  [prev-head direction]
+  (let [x (:x prev-head)
+        y (:y prev-head)]
+    (case direction
+      :left  { :x (- x 1) :y y }
+      :right { :x (+ x 1) :y y }
+      :up    { :x x :y (- y 1) }
+      :down  { :x x :y (+ y 1) })))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn growing?
+  "Returns true if worm is growing"
+  [worm]
+  (> (:grow-count worm) 0))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn move-worm
+  "Given specified direction, returns new worm"
+  [worm direction]
+  (let [pos       (:position worm)
+        prev-head (peek pos)
+        next-head (update-head prev-head direction)]
+
+    (build-worm (:initial-len worm) 
+                ; Decrement counter
+                (max 0 (dec (:grow-count worm)))
+                (if (growing? worm)
+                  ; Still growing, don't drop tail
+                  (conj pos next-head)
+                  ; Not growing, drop tail
+                  (conj (vec (rest pos)) next-head)))))
 
