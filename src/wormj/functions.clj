@@ -21,12 +21,11 @@
     :grow-count  grow-count
     :position    pos        })
 
-
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-board
   "Generates an initial board"
-  [width height]
-  (build-board nil {:x width :y height}))
+  [apple width height]
+  (build-board apple {:x width :y height}))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-worm-position

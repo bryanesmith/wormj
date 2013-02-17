@@ -40,9 +40,9 @@
 (deftest test-collide-wall?
   (let [worm-1  (gen-worm 5  8 4)   ; Head => {:x 8 :y 8}
         worm-2  (gen-worm 1 -1 4)   ; Collides y
-        board-1 (gen-board 8 9)     ; worm-1 => collides x
-        board-2 (gen-board 9 8)     ; worm-1 => collides y
-        board-3 (gen-board 9 9)]    ; worm-1 => no collide
+        board-1 (gen-board nil 8 9)     ; worm-1 => collides x
+        board-2 (gen-board nil 9 8)     ; worm-1 => collides y
+        board-3 (gen-board nil 9 9)]    ; worm-1 => no collide
 
     (is (true?  (collide-wall? worm-1 board-1)))
     (is (true?  (game-over? worm-1 board-1)))
@@ -65,7 +65,7 @@
   (let [tail-collide (build-worm 3 0 [{:x 5 :y 5} {:x 6 :y 5} {:x 6 :y 6} {:x 5 :y 6} {:x 5 :y 5}])
         body-collide (build-worm 3 0 [{:x 4 :y 5} {:x 5 :y 5} {:x 6 :y 5} {:x 6 :y 6} {:x 5 :y 6} {:x 5 :y 5}])
         nil-collide (build-worm 3 0 [{:x 5 :y 5} {:x 6 :y 5} {:x 6 :y 6} {:x 5 :y 6} {:x 5 :y 7}])
-        board-1 (gen-board 8 9)] 
+        board-1 (gen-board nil 8 9)] 
 
     (is (true?  (collide-self? tail-collide)))   ; Collides with tail
     (is (true?  (game-over? tail-collide board-1)))   
