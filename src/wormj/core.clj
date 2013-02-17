@@ -3,6 +3,26 @@
             [wormj.state       :as s]
             [lanterna.terminal :as t])
   (:gen-class))
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+
+; === STATE ===
+(def exception       (ref nil))   ; Store exception
+(def t-last-move-ms  (ref nil))   ; timestamp prev move
+
+; === RENDERING OPTIMIZATIONS ===
+(def prev-apple (ref nil)) 
+(def prev-worm  (ref nil))
+
+; === SETTINGS ===
+(def term (t/get-terminal :unix)) ; TODO: set by user
+(def board-char (char \space))    ; Empty position
+(def debug? false)                ; Show tracers?
+(def move-timeout-ms 1000)        ; ms before auto turn advance
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn tracer [str]
+  (if debug?
+    (println "[DEBUG]" str)))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~  
 (defn to-str-map-key
@@ -62,14 +82,21 @@
 (defn print-game-over-msg
   ""
   []
+
+  ; If there was an error
+  (if (not (nil? @exception))
+    (do
+      (println)
+      (println "Error: " (.getMessage @exception))))
+
+  ; Standard game summary
   (println)
   (println "Well, you ran into something and the game is over.")
   (println "Your final score was" (f/score @s/worm))
-  (println))
 
-; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
-; TODO: the type of terminal should be specified by user.
-(def term (t/get-terminal :unix))
+  ; Tracers for debugging
+  (tracer (str "Trajectory: " @s/trajectory))
+  (println))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn draw-board
@@ -104,11 +131,6 @@
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn subtract-lists[a b]
    (remove (into #{} b) a))
-
-; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
-(def prev-apple (ref nil))
-(def prev-worm  (ref nil))
-(def board-char (char \space))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn draw-board-character
@@ -163,6 +185,53 @@
     (ref-set prev-apple (:apple @s/board))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn update-t-last-move []
+  (dosync
+    (ref-set t-last-move-ms (System/currentTimeMillis))))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn move-timeout? 
+  "Returns true if user hasn't moved in required time, and should advance turn automatically" 
+  []
+  (if-not (nil? @t-last-move-ms)
+    (>= (- (System/currentTimeMillis) @t-last-move-ms) move-timeout-ms)
+    false))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn handle-move [way turns]
+  (update-t-last-move)
+  (s/set-trajectory way)
+  (let [apple (:apple @s/board)]
+    (loop [i 0]
+      ; Break when i turns or apple consumed
+      (when (and
+              (< i turns)
+              (= apple (:apple @s/board)))
+        (s/advance-turn)
+        (recur (inc i))))))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn handle-key-press [key]
+  (case key
+    \h     (handle-move :left  1)
+    \j     (handle-move :down  1)
+    \k     (handle-move :up    1)
+    \l     (handle-move :right 1)
+
+    \H     (handle-move :left  9)
+    \J     (handle-move :down  5)
+    \K     (handle-move :up    5)
+    \L     (handle-move :right 9)
+
+    :left  (handle-move :left  1)
+    :down  (handle-move :down  1)
+    :up    (handle-move :up    1)
+    :right (handle-move :right 1)
+
+    ; Default, do nothing
+    nil))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn run-in-term
   "Handles execution game once terminal is stated"
   []
@@ -175,8 +244,12 @@
       (if-not (f/game-over? @s/worm @s/board)
         (do
           (draw-updates)         
-          (. Thread (sleep 100))
-          (s/advance-turn)
+          (handle-key-press (t/get-key term))
+          (. Thread (sleep 10))
+          (if (move-timeout?)
+            (do
+              (update-t-last-move)
+              (s/advance-turn)))
           (recur))))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
@@ -188,7 +261,7 @@
       (t/start term)
       (run-in-term))
   (catch Exception e
-    (println "An error occured: " (.getMessage e)))
+    (dosync (ref-set exception e)))
   (finally 
     (do
       (t/stop term)
