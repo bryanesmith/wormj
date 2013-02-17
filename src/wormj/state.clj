@@ -46,7 +46,7 @@
   "Initialize the game."
   [b-width b-height]
   (set-trajectory :right)
-  (let [worm# (wormj.functions/gen-worm 0 (/ b-height 2) init-worm-len)]
+  (let [worm# (wormj.functions/gen-worm 0 (quot b-height 2) init-worm-len)]
     (dosync
       (ref-set worm worm#)
       (ref-set board (wormj.functions/gen-board (gen-apple b-width b-height worm#) b-width b-height)))))
