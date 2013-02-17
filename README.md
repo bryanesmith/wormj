@@ -4,7 +4,11 @@ Clojure port of BSD game `worm` - the growing worm game.
 
 ## NOTICE
 
-The game is not yet playable (at least by humans), although the API is functional. I will update this notice as progress continues.
+As of 0.3.0, the game is functional, but still alpha. Note that even though you can play:
+  * Score not reported until game over
+  * Script arguments ignored (e.g., cannot set terminal)
+
+This notice will be updated once game is considered beta.
 
 ## Build & run
 
@@ -201,6 +205,7 @@ For more examples, see associated tests.
 
 ## History
 
+  * **0.3** (*alpha*, 2013/02/17): Game functional (including arrow keys, `hjkl`, and `HJKL`), though score not reported until game over, and script arguments ignored.
   * **0.2** (2013/02/16): Functional API, but no GUI.
   * **0.1** (2013/02/12): Game is non-functional while working on documentation and infrastructure.
 
