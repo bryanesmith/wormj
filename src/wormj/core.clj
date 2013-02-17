@@ -79,6 +79,12 @@
         (wall-to-str :bottom width)))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn print-game
+  "Print out results of game-to-str"
+  []
+  (println (clojure.string/join "\n" (game-to-str))))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn print-game-over-msg
   ""
   []
