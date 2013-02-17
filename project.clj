@@ -5,4 +5,5 @@
   ; :license {:name ""
   ;           :url ""}
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [clojure-lanterna "0.9.2"]])
+                 [clojure-lanterna "0.9.2"]]
+  :main wormj.core)
