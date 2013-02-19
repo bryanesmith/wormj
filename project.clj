@@ -1,4 +1,4 @@
-(defproject wormj "0.3.0"
+(defproject wormj "1.0.0"
   :description "Clojure port of BSD game `worm` - the growing worm game."
   :url "https://github.com/bryanesmith/wormj"
   ; TODO: Determine license. 
