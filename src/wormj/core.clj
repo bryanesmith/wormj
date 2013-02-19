@@ -149,6 +149,7 @@
 (defn draw-updates
   "Updates screen: worm, apple, score"
   []
+  (let [head (peek (:position @s/worm))]
 
   ; If prev-worm set, overwrite any positions that
   ; are no longer part of worm.
@@ -172,7 +173,8 @@
         (draw-board-character \o seg))))
 
   ; Render worm head
-  (draw-board-character \@ (peek (:position @s/worm)))
+  (draw-board-character \@ head)
+  (t/move-cursor term (+ 1 (:x head)) (+ 2 (:y head)))
 
   ; Render apple (if necessary)
   (if (or (nil? @prev-apple)
@@ -181,14 +183,11 @@
           val   (:val   apple)
           pos   (:position apple)]
       (draw-board-character (char (+ 48 val)) pos)))
-
-  ; Move cursor out of way
-  (t/move-cursor term 999 999)
   
   ; Store ref to worm
   (dosync
     (ref-set prev-worm  @s/worm)
-    (ref-set prev-apple (:apple @s/board))))
+    (ref-set prev-apple (:apple @s/board)))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn update-t-last-move []
