@@ -6,7 +6,7 @@ Clojure port of BSD game `worm` - the growing worm game.
 
 The game is finished. `ooooooo@`
 
-![Screenshot of wormj](https://github.com/bryanesmith/wormj/blob/master/screenshots/wormj-29.png "Screenshot of wormj")
+![Screenshot of wormj](https://raw.github.com/bryanesmith/wormj/master/screenshots/wormj-29.png "Screenshot of wormj")
 
 ## Build & run
 
