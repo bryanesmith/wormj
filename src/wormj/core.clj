@@ -1,12 +1,13 @@
 (ns wormj.core
   (:require [wormj.functions   :as f]
             [wormj.state       :as s]
-            [lanterna.terminal :as t])
+            [lanterna.terminal :as t]
+            [clojure.tools.cli :as c]
+            [clojure.stacktrace])
   (:gen-class))
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 
 ; === STATE ===
-(def exception       (ref nil))   ; Store exception
 (def t-last-move-ms  (ref nil))   ; timestamp prev move
 
 ; === RENDERING OPTIMIZATIONS ===
@@ -15,7 +16,7 @@
 (def prev-score (ref nil))
 
 ; === SETTINGS ===
-(def term (t/get-terminal :unix)) ; TODO: set by user
+(def term (ref nil)) ; TODO: set by user
 (def board-char (char \space))    ; Empty position
 (def debug? false)                ; Show tracers?
 (def move-timeout-ms 1000)        ; ms before auto turn advance
@@ -86,15 +87,19 @@
   (println (clojure.string/join "\n" (game-to-str))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn error [e]
+  (if debug?
+    (.printStackTrace e)
+    (do
+      (println)
+      (println "[error]" (.getMessage e))
+      (println)))
+  (System/exit 1))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn print-game-over-msg
   ""
   []
-
-  ; If there was an error
-  (if (not (nil? @exception))
-    (do
-      (println)
-      (println "Error: " (.getMessage @exception))))
 
   ; Standard game summary
   (println)
@@ -113,25 +118,25 @@
         board-height (:y (:size @s/board))]
 
     ; "Worm"
-    (t/move-cursor term 1 0)
-    (t/put-string term "Wormj")
+    (t/move-cursor @term 1 0)
+    (t/put-string @term "Wormj")
 
     ; Top wall
-    (t/move-cursor term 0 1)
-    (t/put-string term (wall-to-str :top board-width))
+    (t/move-cursor @term 0 1)
+    (t/put-string @term (wall-to-str :top board-width))
 
     ; Side walls
     (loop [i 0]
       (when (< i board-height)
-        (t/move-cursor term 0 (+ 2 i))
-        (t/put-string term "*")
-        (t/move-cursor term (+ board-width 1) (+ 2 i) )
-        (t/put-string term "*")
+        (t/move-cursor @term 0 (+ 2 i))
+        (t/put-string @term "*")
+        (t/move-cursor @term (+ board-width 1) (+ 2 i) )
+        (t/put-string @term "*")
         (recur (inc i))))
 
     ; Bottom wall
-    (t/move-cursor term 0 (+ board-height 2))
-    (t/put-string term (wall-to-str :bottom board-width))))
+    (t/move-cursor @term 0 (+ board-height 2))
+    (t/put-string @term (wall-to-str :bottom board-width))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 ; Source: http://goo.gl/Teu2N 
@@ -143,8 +148,8 @@
 (defn draw-board-character
   "Draw character at specified board (not screen) coord."
   [c coord]
-  (t/move-cursor term (+ 1 (:x coord)) (+ 2 (:y coord)))
-  (t/put-character term c))
+  (t/move-cursor @term (+ 1 (:x coord)) (+ 2 (:y coord)))
+  (t/put-character @term c))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn draw-updates
@@ -159,14 +164,14 @@
              (or (nil? @prev-score)
                  (= 0 @prev-score)))
       (do 
-        (t/move-cursor term (- b-width 9) 0)
-        (t/put-string term "Score:")))
+        (t/move-cursor @term (- b-width 9) 0)
+        (t/put-string @term "Score:")))
 
     (if (and (not= score @prev-score)
              (> score 0))
       (do
-        (t/move-cursor term (- b-width 3) 0)
-        (t/put-string term (format "%4d" score))))
+        (t/move-cursor @term (- b-width 3) 0)
+        (t/put-string @term (format "%4d" score))))
 
     ; If prev-worm set, overwrite any positions that
     ; are no longer part of worm.
@@ -191,7 +196,7 @@
 
     ; Render worm head
     (draw-board-character \@ head)
-    (t/move-cursor term (+ 1 (:x head)) (+ 2 (:y head)))
+    (t/move-cursor @term (+ 1 (:x head)) (+ 2 (:y head)))
 
     ; Render apple (if necessary)
     (if (or (nil? @prev-apple)
@@ -259,7 +264,7 @@
 (defn run-in-term
   "Handles execution game once terminal is stated"
   []
-  (let [term-size (t/get-size term)
+  (let [term-size (t/get-size @term)
         board-x   (- (first term-size) 2)
         board-y   (- (last term-size)  3)]
     (wormj.state/init-game board-x board-y)
@@ -268,7 +273,7 @@
       (if-not (f/game-over? @s/worm @s/board)
         (do
           (draw-updates)         
-          (handle-key-press (t/get-key term))
+          (handle-key-press (t/get-key @term))
           (. Thread (sleep 10))
           (if (move-timeout?)
             (do
@@ -277,17 +282,35 @@
           (recur))))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn set-terminal [terminal]
+  (if-not (some #(= terminal %) ["auto" "swing" "text" "unix" "cygwin"])
+    (throw (Exception. (str "Invalid terminal: " terminal))))
+  (dosync (ref-set term (t/get-terminal (keyword terminal)))))
+ 
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn -main
   "User runs game."
   [& args]
-  (try 
-    (do
-      (t/start term)
-      (run-in-term))
-  (catch Exception e
-    (dosync (ref-set exception e)))
-  (finally 
-    (do
-      (t/stop term)
-      (print-game-over-msg)))))
+  (let [[options args banner]
+        (c/cli args
+               ["-t" "--terminal" "Specify terminal" :default "text"])]
+    
+    ; Set terminal, other args
+    (try
+      (set-terminal (:terminal options))
+      (catch Exception e
+        (error e)))
+
+    ; Start game
+    (try 
+      (do
+        (t/start @term)
+        (run-in-term))
+    (catch Exception e
+      (error e))
+    (finally 
+      (do
+        (if-not (nil? @term)
+          (t/stop @term))
+        (try (print-game-over-msg) (catch Exception e)))))))
 
