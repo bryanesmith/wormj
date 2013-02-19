@@ -229,6 +229,7 @@
       ; Break when i turns or apple consumed
       (when (and
               (< i turns)
+              (not (f/game-over? @s/worm @s/board))
               (= apple (:apple @s/board)))
         (s/advance-turn)
         (recur (inc i))))))
