@@ -12,6 +12,7 @@
 ; === RENDERING OPTIMIZATIONS ===
 (def prev-apple (ref nil)) 
 (def prev-worm  (ref nil))
+(def prev-score (ref nil))
 
 ; === SETTINGS ===
 (def term (t/get-terminal :unix)) ; TODO: set by user
@@ -149,45 +150,62 @@
 (defn draw-updates
   "Updates screen: worm, apple, score"
   []
-  (let [head (peek (:position @s/worm))]
+  (let [head (peek (:position @s/worm))
+        score (f/score @s/worm)
+        b-width (:x (:size @s/board))]
+    
+    ; Render score
+    (if (and (> score 0)
+             (or (nil? @prev-score)
+                 (= 0 @prev-score)))
+      (do 
+        (t/move-cursor term (- b-width 9) 0)
+        (t/put-string term "Score:")))
 
-  ; If prev-worm set, overwrite any positions that
-  ; are no longer part of worm.
-  (if-not (nil? @prev-worm)
-    (let [old-w (:position @prev-worm)
-          new-w (:position @s/worm)]
-    (doseq [seg (subtract-lists old-w new-w)]
-      (draw-board-character board-char seg))))
+    (if (and (not= score @prev-score)
+             (> score 0))
+      (do
+        (t/move-cursor term (- b-width 3) 0)
+        (t/put-string term (format "%4d" score))))
 
-  ; Render worm body
-  (if (nil? @prev-worm)
+    ; If prev-worm set, overwrite any positions that
+    ; are no longer part of worm.
+    (if-not (nil? @prev-worm)
+      (let [old-w (:position @prev-worm)
+            new-w (:position @s/worm)]
+      (doseq [seg (subtract-lists old-w new-w)]
+        (draw-board-character board-char seg))))
 
-    ; No prev-worm, so draw entire worm
-    (doseq [seg (pop (:position @s/worm))]
-      (draw-board-character \o seg))
+    ; Render worm body
+    (if (nil? @prev-worm)
 
-    ; Prev-worm, just draw difference
-    (let [old-w (pop (:position @prev-worm))
-          new-w (pop (:position @s/worm))]
-      (doseq [seg (subtract-lists new-w old-w)]
-        (draw-board-character \o seg))))
+      ; No prev-worm, so draw entire worm
+      (doseq [seg (pop (:position @s/worm))]
+        (draw-board-character \o seg))
 
-  ; Render worm head
-  (draw-board-character \@ head)
-  (t/move-cursor term (+ 1 (:x head)) (+ 2 (:y head)))
+      ; Prev-worm, just draw difference
+      (let [old-w (pop (:position @prev-worm))
+            new-w (pop (:position @s/worm))]
+        (doseq [seg (subtract-lists new-w old-w)]
+          (draw-board-character \o seg))))
 
-  ; Render apple (if necessary)
-  (if (or (nil? @prev-apple)
-          (not= @prev-apple (:apple @s/board)))
-    (let [apple (:apple @s/board)
-          val   (:val   apple)
-          pos   (:position apple)]
-      (draw-board-character (char (+ 48 val)) pos)))
-  
-  ; Store ref to worm
-  (dosync
-    (ref-set prev-worm  @s/worm)
-    (ref-set prev-apple (:apple @s/board)))))
+    ; Render worm head
+    (draw-board-character \@ head)
+    (t/move-cursor term (+ 1 (:x head)) (+ 2 (:y head)))
+
+    ; Render apple (if necessary)
+    (if (or (nil? @prev-apple)
+            (not= @prev-apple (:apple @s/board)))
+      (let [apple (:apple @s/board)
+            val   (:val   apple)
+            pos   (:position apple)]
+        (draw-board-character (char (+ 48 val)) pos)))
+    
+    ; Store ref to worm
+    (dosync
+      (ref-set prev-worm  @s/worm)
+      (ref-set prev-apple (:apple @s/board))
+      (ref-set prev-score score))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn update-t-last-move []
