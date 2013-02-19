@@ -12,7 +12,7 @@
   "Set trajectory"
   [way]
   (if-not (some #(= way %) [:right :left :up :down])
-    (throw (Exception. (str "Invalid directory: " way)))
+    (throw (Exception. (str "Invalid direction: " way)))
     (dosync (ref-set trajectory way))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 

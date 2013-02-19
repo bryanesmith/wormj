@@ -46,10 +46,19 @@
 (defn collide-wall?
   "Returns true if worm collides with wall"
   [worm board]
-  (let [w_x (:x (last (:position worm)))
-        w_y (:y (last (:position worm)))
-        b_x (:x (:size board))
-        b_y (:y (:size board))]
+  (let [head (peek (:position worm))
+        w_x  (:x head)
+        w_y  (:y head)
+        b_x  (:x (:size board))
+        b_y  (:y (:size board))]
+
+    ; Assert that worm has not left the stage
+    (assert (> w_x -2))
+    (assert (> w_y -2))
+    (assert (<= w_x b_x))
+    (assert (<= w_y b_y))
+
+    ; Run into wall
     (or (= w_x -1)
         (= w_y -1)
         (= w_x b_x)
