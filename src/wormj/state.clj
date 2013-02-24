@@ -16,7 +16,7 @@
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-apple
-  "Generates a random apple. (No side effects; the reason this is not in functional layer is because random output.)"
+  "Generates a random apple."
   [max-x max-y worm]
   (loop []
     (let [val (int (+ 1 (rand-int 9)))
