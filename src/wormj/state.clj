@@ -32,13 +32,17 @@
   "Advance one turn: using trajectory, move worm, potentially consume/generate apple."
   []
   (let [moved-worm (f/move-worm @worm @trajectory)]
-    (dosync(ref-set worm moved-worm))
-    (if (f/apple-consumed? @board @worm)
+    (if (f/apple-consumed? @board moved-worm)
       ; Apple consumed - modify, then set, new worm to have growth count & generate/set new apple
-      (let [growing-worm (assoc moved-worm :grow-count (:val (:apple @board)))]
+      (let [g-c (get-in @board [:apple :val])
+            b-x (get-in @board [:size :x])
+            b-y (get-in @board [:size :y])
+            grow-worm (assoc moved-worm :grow-count g-c)]
         (dosync
-          (ref-set worm growing-worm)
-          (ref-set board (assoc @board :apple (gen-apple (:x (:size @board)) (:y (:size @board)) growing-worm))))))))
+          (ref-set worm grow-worm)
+          (ref-set board (assoc @board :apple (gen-apple b-x b-y grow-worm)))))
+      ; Apple not consumed - set moved worm
+      (dosync(ref-set worm moved-worm)))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn init-game
