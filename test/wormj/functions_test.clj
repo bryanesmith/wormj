@@ -4,7 +4,9 @@
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (deftest test-gen-worm-position
-  (is (thrown? Exception (gen-worm 0 0 0)))
+  (is (thrown? AssertionError (gen-worm -2  0 1)))
+  (is (thrown? AssertionError (gen-worm  0 -2 1)))
+  (is (thrown? AssertionError (gen-worm  0  0 0)))
   (is (= (gen-worm-position 0 0 1) [{:x 0 :y 0}]))
   (is (= (gen-worm-position 0 0 3) [{:x 0 :y 0} {:x 1 :y 0} {:x 2 :y 0}]))
   (is (= (gen-worm-position 2 0 3) [{:x 2 :y 0} {:x 3 :y 0} {:x 4 :y 0}]))

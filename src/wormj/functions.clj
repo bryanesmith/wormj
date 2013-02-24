@@ -31,10 +31,11 @@
 (defn gen-worm-position
   "Creates coordinates for a worm."
   [x, y, len]
-  (if (< len 1)
-    (throw (Exception. "Length must be 1 or greater."))
-    (vec (for [x# (range x (+ x len))]
-      {:x x# :y y}))))
+  ; note: for x & y, -1 is a legal positon
+  ;       (although the game is over) 
+  {:pre [(>= x -1) (>= y -1) (>= len 1)]}
+  (vec (for [x# (range x (+ x len))]
+    {:x x# :y y})))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-worm
