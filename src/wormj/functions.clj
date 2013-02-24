@@ -54,8 +54,8 @@
         b_y  (:y (:size board))]
 
     ; Assert that worm has not left the stage
-    (assert (> w_x -2))
-    (assert (> w_y -2))
+    (assert (>= w_x -1))
+    (assert (>= w_y -1))
     (assert (<= w_x b_x))
     (assert (<= w_y b_y))
 
