@@ -297,19 +297,17 @@
         (c/cli args
                ["-t" "--terminal" "Specify terminal" :default "text"])]
     
-    ; Set terminal, other args
-    (try
-      (set-terminal (:terminal options))
-      (catch Exception e
-        (error e)))
-
-    ; Start game
     (try 
+      ; Handle args
+      (set-terminal (:terminal options))
+
+      ; Start game
       (do
         (t/start @term)
         (run-in-term))
-    (catch Exception e
-      (error e))
+
+    (catch Exception e (error e))
+
     (finally 
       (do
         (if-not (nil? @term)
