@@ -16,7 +16,7 @@
 (def prev-score (ref nil))
 
 ; === SETTINGS ===
-(def term (ref nil)) ; TODO: set by user
+(def term (ref nil)) 
 (def board-char (char \space))    ; Empty position
 (def debug? false)                ; Show tracers?
 (def move-timeout-ms 1000)        ; ms before auto turn advance
@@ -36,15 +36,17 @@
 (defn to-str-map
   "Returns a map of maps with character data. (x_y (game-to-stto-str-map))"
   [worm board]
-  (let [ apple     (:apple board)
-         apple-key (to-str-map-key (:position apple)) 
-         apple-val (:val apple)
-         pos       (:position worm)
-         head      (peek pos)
-         head-key  (to-str-map-key head)
-         body      (pop pos)]
-  (into {apple-key (char (+ 48 apple-val)) head-key \@ } 
-        (map #(vector (to-str-map-key %) \o) body))))
+  (let [ apple      (:apple board)
+         apple-key  (to-str-map-key (:position apple)) 
+         apple-char (char (+ 48 (:val apple)))
+         pos        (:position worm)
+         head       (peek pos)
+         head-key   (to-str-map-key head)
+         head-char  \@
+         body       (pop pos)
+         body-char  \o]
+  (into { apple-key apple-char head-key head-char } 
+        (map #(vector (to-str-map-key %) body-char) body))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn wall-to-str
@@ -53,7 +55,7 @@
   (case type
     :top    (str "┌" (apply str (take width (repeat "*"))) "┐")
     :bottom (str "└" (apply str (take width (repeat "*"))) "┘")
-    (throw (Exception. (str "Invalid wall type: " type)))))
+    (throw (AssertionError. (str "Invalid wall type: " type)))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn row-to-str
@@ -68,11 +70,11 @@
 (defn game-to-str
   "Render current game state as collection of strings"
   []
-  (let [board  @wormj.state/board
-        worm   @wormj.state/worm
-        width  (:x (:size board))
-        height (:y (:size board))
-        str-map   (to-str-map worm board)]
+  (let [board   @wormj.state/board
+        worm    @wormj.state/worm
+        width   (get-in board [:size :x])
+        height  (get-in board [:size :y])
+        str-map (to-str-map worm board)]
     (flatten
       (vector
         (wall-to-str :top width)  
@@ -114,8 +116,8 @@
 (defn draw-board
   "Draw the board to the terminal"
   []
-  (let [board-width  (:x (:size @s/board))
-        board-height (:y (:size @s/board))]
+  (let [b-w (get-in @s/board [:size :x])
+        b-h (get-in @s/board [:size :y])]
 
     ; "Worm"
     (t/move-cursor @term 1 0)
@@ -123,20 +125,20 @@
 
     ; Top wall
     (t/move-cursor @term 0 1)
-    (t/put-string @term (wall-to-str :top board-width))
+    (t/put-string @term (wall-to-str :top b-w))
 
     ; Side walls
     (loop [i 0]
-      (when (< i board-height)
+      (when (< i b-h)
         (t/move-cursor @term 0 (+ 2 i))
         (t/put-string @term "*")
-        (t/move-cursor @term (+ board-width 1) (+ 2 i) )
+        (t/move-cursor @term (+ b-w 1) (+ 2 i) )
         (t/put-string @term "*")
         (recur (inc i))))
 
     ; Bottom wall
-    (t/move-cursor @term 0 (+ board-height 2))
-    (t/put-string @term (wall-to-str :bottom board-width))))
+    (t/move-cursor @term 0 (+ b-h 2))
+    (t/put-string @term (wall-to-str :bottom b-w))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 ; Source: http://goo.gl/Teu2N 
@@ -155,9 +157,9 @@
 (defn draw-updates
   "Updates screen: worm, apple, score"
   []
-  (let [head (peek (:position @s/worm))
-        score (f/score @s/worm)
-        b-width (:x (:size @s/board))]
+  (let [head    (peek (:position @s/worm))
+        score   (f/score @s/worm)
+        b-width (get-in @s/board [:size :x])]
     
     ; Render score
     (if (and (> score 0)
@@ -274,7 +276,7 @@
         (do
           (draw-updates)         
           (handle-key-press (t/get-key @term))
-          (. Thread (sleep 10))
+          (. Thread (sleep 10)) 
           (if (move-timeout?)
             (do
               (update-t-last-move)
