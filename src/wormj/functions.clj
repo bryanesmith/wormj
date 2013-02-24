@@ -81,9 +81,16 @@
       (collide-self? worm)))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn valid-direction? [way]
+  (if (some #(= way %) [:right :left :up :down])
+    true
+    false))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn update-head
   "Given previous head and direction, returns new head. Doesn't check whether valid." 
   [prev-head direction]
+  {:pre [(not (nil? prev-head)) (valid-direction? direction)]}
   (let [x (:x prev-head)
         y (:y prev-head)]
     (case direction
@@ -116,6 +123,7 @@
 (defn move-worm
   "Given specified direction, returns new worm"
   [worm direction]
+  {:pre [(not (nil? worm)) (wormj.functions/valid-direction? direction)]}
   (let [pos       (:position worm)
         prev-head (peek pos)
         next-head (update-head prev-head direction)]

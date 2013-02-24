@@ -11,9 +11,8 @@
 (defn set-trajectory
   "Set trajectory"
   [way]
-  (if-not (some #(= way %) [:right :left :up :down])
-    (throw (Exception. (str "Invalid direction: " way)))
-    (dosync (ref-set trajectory way))))
+  {:pre [(wormj.functions/valid-direction? way)]}
+    (dosync (ref-set trajectory way)))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn gen-apple

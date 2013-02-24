@@ -61,7 +61,7 @@
   (is (= :up @trajectory))
   (set-trajectory :down)
   (is (= :down @trajectory))
-  (is (thrown? Exception (set-trajectory :foo))))
+  (is (thrown? AssertionError (set-trajectory :foo))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 ; Note: this demonstrates how to use wormj as
