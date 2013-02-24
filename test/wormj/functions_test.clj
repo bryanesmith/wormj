@@ -78,6 +78,7 @@
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (deftest test-update-head
+  (is (thrown? AssertionError (update-head {:x 1 :y 1} :foo )))
   (is (= (update-head {:x 1 :y 1} :left  ) {:x 0 :y 1}))
   (is (= (update-head {:x 1 :y 1} :right ) {:x 2 :y 1}))
   (is (= (update-head {:x 1 :y 1} :up    ) {:x 1 :y 0}))
@@ -94,6 +95,8 @@
         worm-4 (build-worm 1 0 [{:x 2 :y 1} {:x 3 :y 1} {:x 3 :y 2}])
         worm-5 (build-worm 1 0 [{:x 3 :y 1} {:x 3 :y 2} {:x 2 :y 2}])]
   
+  (is (thrown? AssertionError (move-worm worm-1 :foo)))
+
   ; Worm goes up, grows, growth counter 2 -> 1
   (is (= (move-worm worm-1 :up) worm-2))
 
