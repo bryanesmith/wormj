@@ -298,13 +298,12 @@
                ["-t" "--terminal" "Specify terminal" :default "text"])]
     
     (try 
-      ; Handle args
+      ; === Handle args ===
       (set-terminal (:terminal options))
 
-      ; Start game
-      (do
-        (t/start @term)
-        (run-in-term))
+      ; === Start game ===
+      (t/start @term)
+      (run-in-term)
 
     (catch Exception e (error e))
 
