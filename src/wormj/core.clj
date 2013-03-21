@@ -3,6 +3,7 @@
             [wormj.state       :as s]
             [lanterna.terminal :as t]
             [clojure.tools.cli :as c]
+            [safely.core       :as y]
             [clojure.stacktrace])
   (:gen-class))
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
@@ -311,5 +312,5 @@
       (do
         (if-not (nil? @term)
           (t/stop @term))
-        (try (print-game-over-msg) (catch Exception e)))))))
+        (y/safely (print-game-over-msg)))))))
 
