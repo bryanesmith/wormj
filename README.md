@@ -221,4 +221,5 @@ For more examples, see associated tests.
 
 ## License
 
-Need to figure this out.
+Distributed under [Eclipse Public License 1.0](http://opensource.org/licenses/eclipse-1.0.php), which is the same as Clojure.
+
