@@ -72,7 +72,9 @@
   (let [ pos  (:position worm)
          head (peek pos)
          body (pop pos) ]
-    (true? (some #(= head %) body)))) ; Use true to evaluate nil as false
+
+    ; Use true to evaluate nil as false
+    (true? (some #(= head %) body)))) 
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn game-over?
@@ -117,27 +119,46 @@
   "Returns true if apple consumed."
   [board worm]
   (if (apple? board)
-    (= (:position (:apple board)) (peek (:position worm))) ; Eaten iff position(head) = position(apple)
+    ; Eaten iff position(head) = position(apple)
+    (= (:position (:apple board)) (peek (:position worm))) 
     false))
+
+; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
+(defn update-worm-pos
+  "Generates new worm from old worm and direction."
+  [worm direction]
+  (let [prev-pos  (:position worm)
+        prev-head (peek prev-pos)
+        up-head   (update-head prev-head direction)]
+        
+    (if (growing? worm)
+
+      ; Still growing, don't drop tail
+      (conj prev-pos up-head)
+
+      ; Not growing, drop tail
+      (conj (vec (rest prev-pos)) up-head))))
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn move-worm
   "Given specified direction, returns new worm"
   [worm direction]
   {:pre [(not (nil? worm)) (wormj.functions/valid-direction? direction)]}
-  (let [pos       (:position worm)
-        prev-head (peek pos)
-        next-head (update-head prev-head direction)]
-    (build-worm (:initial-len worm) 
-                (max 0 (dec (:grow-count worm)))          ; Decrement counter
-                (if (growing? worm)
-                  (conj pos next-head)                    ; Still growing, don't drop tail
-                  (conj (vec (rest pos)) next-head)))))   ; Not growing, drop tail
+  (let [grow-rem  (max 0 (dec (:grow-count worm)))
+        next-pos  (update-worm-pos worm direction)
+        init-len  (:initial-len worm)]
+    (build-worm init-len grow-rem next-pos))) 
 
 ; ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 (defn score
   "Calculates current score"
   [worm]
-  (- (+ (count (:position worm)) (:grow-count worm))     ; score = length + grow-count - initial-len
-     (:initial-len worm)))
+  {:pre [(not (nil? worm))]}
+  ; score = length + grow-count - initial-len
+  (let [length   (count (:position worm))
+        grow-cnt (:grow-count worm)
+        init-len (:initial-len worm)]
+    (-> length
+      (+ grow-cnt)
+      (- init-len))))     
 
